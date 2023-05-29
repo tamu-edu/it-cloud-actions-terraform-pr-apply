@@ -26,11 +26,11 @@ inputs:
     description: CLI flags to use with terraform init
     required: false
     default: ""
-  s3_bucket:
+  s3-bucket:
     description: Override s3 bucket to upload output to. Defaults to the same as the state backend.
     required: false
     default: ""
-  s3_key:
+  s3-key:
     description: Override s3 object key to upload output to. Defaults to a subdirectory of the statefile key.
     required: false
     default: ""
@@ -115,13 +115,13 @@ runs:
         # Get s3 bucket and key by converting terraform backend config to json
         json=$(./hcl2json *.tf)
 
-        [[ -z "${{ inputs.s3_bucket }}" ]] \
+        [[ -z "${{ inputs.s3-bucket }}" ]] \
           && s3_bucket=$(echo $json | jq -r '.terraform[0].backend.s3[0].bucket') \
-          || s3_bucket=${{ inputs.s3_bucket }}
+          || s3_bucket=${{ inputs.s3-bucket }}
 
-        [[ -z "${{ inputs.s3_key }}" ]] \
+        [[ -z "${{ inputs.s3-key }}" ]] \
           && s3_key=$(echo $json | jq -r '.terraform[0].backend.s3[0].key') \
-          || s3_key=${{ inputs.s3_key }}
+          || s3_key=${{ inputs.s3-key }}
         
         echo "S3 bucket: $s3_bucket"
         echo "S3 key: $s3_key"
