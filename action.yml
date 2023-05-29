@@ -50,11 +50,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ inputs.terraform-version }}
-
     - name: Find if this push belonged to a PR
       if: github.event_name == 'push'
       uses: 8BitJonny/gh-get-current-pr@2.2.0
@@ -77,6 +72,11 @@ runs:
         echo "number=$number" >> $GITHUB_OUTPUT
         echo "This workflow run is associated with pull request ID: $number"
 
+    - name: setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+        
     - name: Terraform Apply
       id: apply
       shell: bash
