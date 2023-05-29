@@ -1,0 +1,12 @@
+name: Test This Composite Action
+on:
+  workflow_dispatch:
+
+
+jobs:
+  test-case:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tamu-edu/it-ae-actions-pullrequest-tfapply@test
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

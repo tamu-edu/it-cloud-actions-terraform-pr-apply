@@ -1,0 +1,188 @@
+name: Terraform Apply a Pull Request
+description: This workflow will run terraform apply on the merge commit of a pull request and upload the output to S3 for persistence.
+author: jrafferty@tamu.edu
+
+inputs:
+  debug:
+    description: Debug workflow with tmate if an error occurs
+    required: false
+    default: "false"
+  GITHUB_TOKEN:
+    description: GitHub token for access to the pull request
+    required: true
+  working-directory:
+    description: Working directory for the `run` actions
+    required: false
+    default: ''
+  terraform-version:
+    description: Version of terraform to install
+    required: false
+    default: latest
+  terraform-workspace:
+    description: Terraform workspace to select. Must already exist 
+    required: false
+    default: default
+  terraform-init-flags:
+    description: CLI flags to use with terraform init
+    required: false
+    default: ""
+  s3_bucket:
+    description: Override s3 bucket to upload output to. Defaults to the same as the state backend.
+    required: false
+    default: ""
+  s3_key:
+    description: Override s3 object key to upload output to. Defaults to a subdirectory of the statefile key.
+    required: false
+    default: ""
+  pull_request_id:
+    description: Associate the run with a specific pull request id. Defaults to finding the ID from the merge commit.
+    required: false
+    default: ""
+
+outputs:
+  apply_output:
+    description: The terraform apply output
+    value: ${{ steps.output.outputs.output }}
+  s3_path:
+    description: The S3 URL of the uploaded log file
+    value: ${{ steps.s3.outputs.s3_url }}
+
+runs:
+  using: composite
+  steps:
+    - name: setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+
+    - name: Find if this push belonged to a PR
+      if: github.event_name == 'push'
+      uses: 8BitJonny/gh-get-current-pr@2.2.0
+      id: pr
+
+    - name: Consolidate PR ID
+      shell: bash
+      id: pr_id
+      run: |
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+          if [[ "${{ steps.pr.outputs.pr_found }}" == "false" ]]; then
+            echo "No PR found for this workflow run. Exiting."
+            exit 1
+          fi
+          number=${{ steps.pr.outputs.number }}
+        else
+          number=${{ inputs.pull_request_id }}
+        fi
+
+        echo "number=$number" >> $GITHUB_OUTPUT
+        echo "This workflow run is associated with pull_request_id $number"
+
+    - name: Terraform Apply
+      id: apply
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        TF_WORKSPACE: ${{ inputs.terraform-workspace }}
+      run: |
+        terraform init
+        terraform apply -input=false -no-color -auto-approve
+      continue-on-error: true
+
+    - name: Write Apply output to file
+      id: output
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        touch apply.log
+        echo "${{ steps.apply.outputs.stdout }}" >> apply.log
+        echo "${{ steps.apply.outputs.stderr }}" >> apply.log
+        echo "filename=apply.log" >> $GITHUB_OUTPUT
+
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "output<<$EOF" >> "$GITHUB_OUTPUT"
+        cat apply.log >> "$GITHUB_OUTPUT"
+        echo "$EOF" >> "$GITHUB_OUTPUT"
+
+    - name: Generate s3 key name
+      id: s3
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Download hcl2json
+        curl -Lo hcl2json $(curl -s https://api.github.com/repos/tmccombs/hcl2json/releases | jq -r '.[] | select(.tag_name == "v0.5.0").assets[] | select(.name == "hcl2json_linux_amd64").browser_download_url')
+        chmod +x hcl2json
+
+        # Get s3 bucket and key by converting terraform backend config to json
+        json=$(./hcl2json *.tf)
+
+        [[ -z "${{ inputs.s3_bucket }}" ]] \
+          && s3_bucket=$(echo $json | jq -r '.terraform[0].backend.s3[0].bucket') \
+          || s3_bucket=${{ inputs.s3_bucket }}
+
+        [[ -z "${{ inputs.s3_key }}" ]] \
+          && s3_key=$(echo $json | jq -r '.terraform[0].backend.s3[0].key') \
+          || s3_key=${{ inputs.s3_key }}
+        
+        echo "S3 bucket: $s3_bucket"
+        echo "S3 key: $s3_key"
+        
+        # Generate s3 key name
+        key="apply_logs/${{ github.repository }}/pr-${{ steps.pr_id.outputs.number }}/$(date -u +'pr-4/%Y-%m-%d/apply-%Y-%m-%dT%H:%M:%SZ.log')"
+        echo "S3 key name: $key"
+
+        # Copy terraform apply log to s3
+        s3_url="s3://${s3_bucket}/${s3_key}/${key}"
+        aws s3 cp ${{ steps.output.outputs.filename }} $s3_url
+
+        echo "s3_bucket=$s3_bucket" >> $GITHUB_OUTPUT
+        echo "s3_key=$s3_key/$key" >> $GITHUB_OUTPUT
+        echo "s3_url=$s3_url" >> $GITHUB_OUTPUT
+
+  
+    - name: Comment Apply output to PR
+      id: comment-apply
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        token: ${{ inputs.GITHUB_TOKEN }}
+        issue-number: ${{ steps.pr_id.outputs.number }}
+        body: |
+          Terraform Apply:
+
+          Full log persisted at: [${{ steps.s3.outputs.s3_url}}](https://s3.console.aws.amazon.com/s3/object/${{ steps.s3.outputs.s3_bucket }}?prefix=${{ steps.s3.outputs.s3_key}})
+  
+          ```
+          ${{ steps.apply.outputs.stdout }}
+          ${{ steps.apply.outputs.stderr }}
+          ```
+    
+    - name: Create issue on apply failure
+      uses: actions/github-script@v6
+      if: steps.apply.conclusion == 'failure'
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '[Terraform Failure] Apply from PR ${{ steps.pr_id.outputs.number }} failed.',
+            body: `Apply from PR ${{ steps.pr_id.outputs.number }} failed.
+              
+              Please review the logs and take appropriate action.
+              
+              Terraform Apply:
+  
+              \`\`\`
+              ${{ steps.apply.outputs.stdout }}
+              ${{ steps.apply.outputs.stderr }}
+              \`\`\`
+            `,
+            labels: ['terraform-failure']
+          })
+
+    - name: Debug with TMATE if the debug environment variable is set to "true" and something failed
+      if: ${{ (failure() || steps.apply.outcome == 'failure') && inputs.debug == 'true' }}
+      uses: mxschmitt/action-tmate@v3
+      
+    - name: Workflow Run Status
+      shell: bash
+      if: steps.apply.outcome == 'failure'
+      run: exit 1
