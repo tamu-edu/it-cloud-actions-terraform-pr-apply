@@ -103,6 +103,8 @@ runs:
         cat apply.log >> "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
+        echo "summary=$(cat apply.log | grep 'Apply complete')" >> "$GITHUB_OUTPUT"
+
     - name: Generate s3 key name
       id: s3
       shell: bash
@@ -146,7 +148,7 @@ runs:
         token: ${{ inputs.GITHUB_TOKEN }}
         issue-number: ${{ steps.pr_id.outputs.number }}
         body: |
-          Terraform Apply:
+          Terraform Apply: ${{ steps.output.outputs.summary }}
 
           Full log persisted at: [${{ steps.s3.outputs.s3_url}}](https://s3.console.aws.amazon.com/s3/object/${{ steps.s3.outputs.s3_bucket }}?prefix=${{ steps.s3.outputs.s3_key}})
   
