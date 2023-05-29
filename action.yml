@@ -166,25 +166,26 @@ runs:
       if: steps.apply.conclusion == 'failure'
       with:
         script: |
+          var body = `Apply from PR ${{ steps.pr_id.outputs.number }} failed.
+              
+            Please review the logs and take appropriate action.
+
+            Full log persisted at: [${{ steps.s3.outputs.s3_url}}](https://s3.console.aws.amazon.com/s3/object/${{ steps.s3.outputs.s3_bucket }}?prefix=${{ steps.s3.outputs.s3_key}})
+
+            <details open><summary>Show Output</summary>
+
+            \`\`\`
+            ${{ steps.apply.outputs.stdout }}
+            ${{ steps.apply.outputs.stderr }}
+            \`\`\`
+
+            </details>
+          `
           github.rest.issues.create({
             owner: context.repo.owner,
             repo: context.repo.repo,
             title: '[Terraform Failure] Apply from PR ${{ steps.pr_id.outputs.number }} failed.',
-            body: `Apply from PR ${{ steps.pr_id.outputs.number }} failed.
-              
-              Please review the logs and take appropriate action.
-
-              Full log persisted at: [${{ steps.s3.outputs.s3_url}}](https://s3.console.aws.amazon.com/s3/object/${{ steps.s3.outputs.s3_bucket }}?prefix=${{ steps.s3.outputs.s3_key}})
-
-              <details open><summary>Show Output</summary>
-
-              \`\`\`
-              ${{ steps.apply.outputs.stdout }}
-              ${{ steps.apply.outputs.stderr }}
-              \`\`\`
-
-              </details>
-            `,
+            body: body.substring(0, 65536),
             labels: ['terraform-failure']
           })
 
