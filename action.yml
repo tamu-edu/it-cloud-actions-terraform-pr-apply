@@ -152,9 +152,13 @@ runs:
 
           Full log persisted at: [${{ steps.s3.outputs.s3_url}}](https://s3.console.aws.amazon.com/s3/object/${{ steps.s3.outputs.s3_bucket }}?prefix=${{ steps.s3.outputs.s3_key}})
   
+          <details open><summary>Show Output</summary>
+
           ```
           ${{ steps.apply.outputs.stdout }}
           ${{ steps.apply.outputs.stderr }}
+
+          </details>
           ```
     
     - name: Create issue on apply failure
@@ -172,10 +176,15 @@ runs:
               
               Terraform Apply:
   
+
+              <details open><summary>Show Output</summary>
+
               \`\`\`
               ${{ steps.apply.outputs.stdout }}
               ${{ steps.apply.outputs.stderr }}
               \`\`\`
+
+              </details>
             `,
             labels: ['terraform-failure']
           })
