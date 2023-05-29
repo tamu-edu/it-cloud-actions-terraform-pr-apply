@@ -34,7 +34,7 @@ inputs:
     description: Override s3 object key to upload output to. Defaults to a subdirectory of the statefile key.
     required: false
     default: ""
-  pull_request_id:
+  pr-id:
     description: Associate the run with a specific pull request id. Defaults to finding the ID from the merge commit.
     required: false
     default: ""
@@ -71,11 +71,11 @@ runs:
           fi
           number=${{ steps.pr.outputs.number }}
         else
-          number=${{ inputs.pull_request_id }}
+          number=${{ inputs.pr-id }}
         fi
 
         echo "number=$number" >> $GITHUB_OUTPUT
-        echo "This workflow run is associated with pull_request_id $number"
+        echo "This workflow run is associated with pull request ID: $number"
 
     - name: Terraform Apply
       id: apply
