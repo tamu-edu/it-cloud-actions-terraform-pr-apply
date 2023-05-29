@@ -76,7 +76,7 @@ runs:
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: ${{ inputs.terraform-version }}
-        
+
     - name: Terraform Apply
       id: apply
       shell: bash
@@ -127,7 +127,7 @@ runs:
         echo "S3 key: $s3_key"
         
         # Generate s3 key name
-        key="apply_logs/${{ github.repository }}/pr-${{ steps.pr_id.outputs.number }}/$(date -u +'pr-4/%Y-%m-%d/apply-%Y-%m-%dT%H:%M:%SZ.log')"
+        key="apply_logs/${{ github.repository }}/pr-${{ steps.pr_id.outputs.number }}/$(date -u +'%Y-%m-%d/apply-%Y-%m-%dT%H:%M:%SZ.log')"
         echo "S3 key name: $key"
 
         # Copy terraform apply log to s3
