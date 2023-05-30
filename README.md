@@ -6,6 +6,21 @@ This action requires a pull request to be associated with the run. If a pull req
 
 The `terraform apply` output will be posted to the pull request as a comment, trimmed to 65535 characters. The full output log will also be uploaded to s3 and a link to the log will be posted to the pull request as a comment.
 
+## Usage
+
+Set up AWS access credentials using an action such as [aws-actions/configure-aws-credentials@v2](https://github.com/aws-actions/configure-aws-credentials), then use the action in your workflow:
+
+```yaml
+steps:
+  - name: Terraform Apply Composite Action
+    uses: tamu-edu/it-ae-actions-terraform-pr-apply@main
+    with:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      terraform-workspace: ${{ env.environment }}
+      working-directory: terraform
+      terraform-version: ~1.4.0
+```
+
 ## Limitations
 
 Currently, this action only supports terraform whose state is stored in s3. The IAM role used to run this action must have access to the s3 bucket where the terraform state is stored and be able to create new objects at the backend's key prefix, or to the provided s3 bucket and key override inputs.
