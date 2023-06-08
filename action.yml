@@ -124,10 +124,10 @@ runs:
         [[ -z "${{ inputs.s3-key }}" ]] \
           && s3_key=$(echo $json | jq -r '.terraform[0].backend.s3[0].key') \
           || s3_key=${{ inputs.s3-key }}
-        
+
         echo "S3 bucket: $s3_bucket"
         echo "S3 key: $s3_key"
-        
+
         # Generate s3 key name
         key="apply_logs/${{ github.repository }}/pr-${{ steps.pr_id.outputs.number }}/$(date -u +'%Y-%m-%d/apply-%Y-%m-%dT%H:%M:%SZ.log')"
         echo "S3 key name: $key"
@@ -140,7 +140,6 @@ runs:
         echo "s3_key=$s3_key/$key" >> $GITHUB_OUTPUT
         echo "s3_url=$s3_url" >> $GITHUB_OUTPUT
 
-  
     - name: Comment Apply output to PR
       id: comment-apply
       uses: peter-evans/create-or-update-comment@v2
@@ -151,7 +150,7 @@ runs:
           Terraform Apply: ${{ steps.output.outputs.summary }}
 
           Full log persisted at: [${{ steps.s3.outputs.s3_url}}](https://s3.console.aws.amazon.com/s3/object/${{ steps.s3.outputs.s3_bucket }}?prefix=${{ steps.s3.outputs.s3_key}})
-  
+
           <details open><summary>Show Output</summary>
 
           ```
@@ -160,14 +159,14 @@ runs:
 
           </details>
           ```
-    
+
     - name: Create issue on apply failure
       uses: actions/github-script@v6
       if: steps.apply.conclusion == 'failure'
       with:
         script: |
           var body = `Apply from PR ${{ steps.pr_id.outputs.number }} failed.
-              
+
             Please review the logs and take appropriate action.
 
             Full log persisted at: [${{ steps.s3.outputs.s3_url}}](https://s3.console.aws.amazon.com/s3/object/${{ steps.s3.outputs.s3_bucket }}?prefix=${{ steps.s3.outputs.s3_key}})
@@ -192,7 +191,7 @@ runs:
     - name: Debug with TMATE if the debug environment variable is set to "true" and something failed
       if: ${{ (failure() || steps.apply.outcome == 'failure') && inputs.debug == 'true' }}
       uses: mxschmitt/action-tmate@v3
-      
+
     - name: Workflow Run Status
       shell: bash
       if: steps.apply.outcome == 'failure'
