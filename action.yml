@@ -84,7 +84,7 @@ runs:
       env:
         TF_WORKSPACE: ${{ inputs.terraform-workspace }}
       run: |
-        terraform init
+        terraform init ${{ inputs.terraform-init-flags }}
         terraform apply -input=false -no-color -auto-approve
       continue-on-error: true
 
