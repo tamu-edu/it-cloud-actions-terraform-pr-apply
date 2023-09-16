@@ -26,6 +26,10 @@ inputs:
     description: CLI flags to use with terraform init
     required: false
     default: ""
+  terraform-apply-flags:
+    description: CLI flags to use with terraform apply
+    required: false
+    default: ""
   s3-bucket:
     description: Override s3 bucket to upload output to. Defaults to the same as the state backend.
     required: false
@@ -85,7 +89,7 @@ runs:
         TF_WORKSPACE: ${{ inputs.terraform-workspace }}
       run: |
         terraform init ${{ inputs.terraform-init-flags }}
-        terraform apply -input=false -no-color -auto-approve
+        terraform apply -input=false -no-color -auto-approve ${{ inputs.terraform-apply-flags }}
       continue-on-error: true
 
     - name: Write Apply output to file
