@@ -42,6 +42,10 @@ inputs:
     description: Associate the run with a specific pull request id. Defaults to finding the ID from the merge commit.
     required: false
     default: ""
+  auto-approve:
+    description: Auto approve terraform apply
+    required: false
+    default: "true"
 
 outputs:
   apply_output:
@@ -89,7 +93,7 @@ runs:
         TF_WORKSPACE: ${{ inputs.terraform-workspace }}
       run: |
         terraform init ${{ inputs.terraform-init-flags }}
-        terraform apply -input=false -no-color -auto-approve ${{ inputs.terraform-apply-flags }}
+        terraform apply -input=false -no-color ${{ inputs.auto-approve == 'true' && '-auto-approve' }} ${{ inputs.terraform-apply-flags }}
       continue-on-error: true
 
     - name: Write Apply output to file
