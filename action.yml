@@ -19,7 +19,7 @@ inputs:
     required: false
     default: latest
   terraform-workspace:
-    description: Terraform workspace to select. Must already exist 
+    description: Terraform workspace to select. Must already exist
     required: false
     default: default
   terraform-init-flags:
@@ -112,6 +112,7 @@ runs:
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
         echo "summary=$(cat apply.log | grep 'Apply complete')" >> "$GITHUB_OUTPUT"
+        echo "body=$(cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after')" >> "$GITHUB_OUTPUT"
 
     - name: Generate s3 key name
       id: s3
@@ -162,11 +163,12 @@ runs:
           <details open><summary>Show Output</summary>
 
           ```
-          ${{ steps.apply.outputs.stdout }}
+          ${{ steps.apply.outputs.body }}
           ${{ steps.apply.outputs.stderr }}
 
-          </details>
           ```
+
+          </details>
 
     - name: Create issue on apply failure
       uses: actions/github-script@v6
@@ -182,7 +184,7 @@ runs:
             <details open><summary>Show Output</summary>
 
             \`\`\`
-            ${{ steps.apply.outputs.stdout }}
+            ${{ steps.apply.outputs.body }}
             ${{ steps.apply.outputs.stderr }}
             \`\`\`
 
