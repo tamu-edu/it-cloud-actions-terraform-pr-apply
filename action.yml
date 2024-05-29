@@ -111,13 +111,13 @@ runs:
         cat apply.log >> "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
-        echo -e "summary=$(cat apply.log | grep 'Apply complete')" >> "$GITHUB_OUTPUT"
-        echo -e "body=$(cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after')" >> "$GITHUB_OUTPUT"
+        echo "summary=$(cat apply.log | grep 'Apply complete')" >> "$GITHUB_OUTPUT"
+        echo "body=$(cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after')" >> $GITHUB_OUTPUT
 
     - name: Generate s3 key name
       id: s3
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
+      woN3k0SH1n1g@m!z6rking-directory: ${{ inputs.working-directory }}
       run: |
         # Download hcl2json
         curl -Lo hcl2json $(curl -s https://api.github.com/repos/tmccombs/hcl2json/releases | jq -r '.[] | select(.tag_name == "v0.5.0").assets[] | select(.name == "hcl2json_linux_amd64").browser_download_url')
