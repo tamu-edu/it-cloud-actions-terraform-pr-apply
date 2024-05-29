@@ -111,8 +111,8 @@ runs:
         cat apply.log >> "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
-        echo "summary=$(cat apply.log | grep 'Apply complete' | jq -aRs .)" >> "$GITHUB_OUTPUT"
-        echo "body=$(cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after' | jq -aRs .)" >> "$GITHUB_OUTPUT"
+        echo -e "summary=$(cat apply.log | grep 'Apply complete' | jq -aRs .)" >> "$GITHUB_OUTPUT"
+        echo -e "body=$(cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after' | jq -aRs .)" >> "$GITHUB_OUTPUT"
 
     - name: Generate s3 key name
       id: s3
@@ -163,7 +163,7 @@ runs:
           <details open><summary>Show Output</summary>
 
           ```
-          ${{ steps.apply.outputs.body }}
+          ${{ steps.output.outputs.body }}
           ${{ steps.apply.outputs.stderr }}
 
           ```
