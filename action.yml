@@ -189,7 +189,7 @@ runs:
             <details open><summary>Show Output</summary>
 
             \`\`\`
-            ${{ steps.apply.outputs.body }}
+            ${{ steps.output.outputs.body }}
             ${{ steps.apply.outputs.stderr }}
             \`\`\`
 
