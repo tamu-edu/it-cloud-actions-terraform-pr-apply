@@ -93,20 +93,14 @@ runs:
         TF_WORKSPACE: ${{ inputs.terraform-workspace }}
       run: |
         terraform init ${{ inputs.terraform-init-flags }}
-        terraform apply -input=false -no-color ${{ inputs.auto-approve == 'true' && '-auto-approve' || '' }} ${{ inputs.terraform-apply-flags }}
+        terraform apply -input=false -no-color ${{ inputs.auto-approve == 'true' && '-auto-approve' || '' }} ${{ inputs.terraform-apply-flags }} |& tee apply.log
       continue-on-error: true
 
-    - name: Write Apply output to file
+    - name: Prepare Apply output for comment
       id: output
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      env:
-        stdout: ${{ steps.apply.outputs.stdout }}
-        stderr: ${{ steps.apply.outputs.stderr }}
       run: |
-        touch apply.log
-        echo "${stdout//\"/\\\"}" >> apply.log
-        echo "${stderr//\"/\\\"}" >> apply.log
         echo "filename=apply.log" >> $GITHUB_OUTPUT
 
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
@@ -116,11 +110,11 @@ runs:
 
         echo "summary=$(cat apply.log | grep 'Apply complete')" >> "$GITHUB_OUTPUT"
 
-            {
-              echo "body<<EOF"
-              cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after'
-              echo EOF
-            } >> "$GITHUB_OUTPUT"
+        {
+          echo "body<<EOF"
+          cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after'
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
 
     - name: Generate s3 key name
       id: s3
@@ -172,7 +166,6 @@ runs:
 
           ```
           ${{ steps.output.outputs.body }}
-          ${{ steps.apply.outputs.stderr }}
 
           ```
 
@@ -193,7 +186,7 @@ runs:
 
             \`\`\`
             ${{ steps.output.outputs.body }}
-            ${{ steps.apply.outputs.stderr }}
+
             \`\`\`
 
             </details>
