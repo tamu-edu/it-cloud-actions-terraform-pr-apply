@@ -85,15 +85,19 @@ runs:
       with:
         terraform_version: ${{ inputs.terraform-version }}
 
+    - name: Terraform Init
+      id: init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform init ${{ inputs.terraform-init-flags }}
+
     - name: Terraform Apply
       id: apply
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
         TF_WORKSPACE: ${{ inputs.terraform-workspace }}
-      run: |
-        terraform init ${{ inputs.terraform-init-flags }}
-        terraform apply -input=false -no-color ${{ inputs.auto-approve == 'true' && '-auto-approve' || '' }} ${{ inputs.terraform-apply-flags }} |& tee apply.log
+      run: "terraform apply -input=false -no-color ${{ inputs.auto-approve == 'true' && '-auto-approve' || '' }} ${{ inputs.terraform-apply-flags }} |& tee apply.log"
       continue-on-error: true
 
     - name: Prepare Apply output for comment
