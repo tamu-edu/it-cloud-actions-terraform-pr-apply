@@ -1,6 +1,6 @@
 name: Terraform Apply a Pull Request
 description: This workflow will run terraform apply on the merge commit of a pull request and upload the output to S3 for persistence.
-author: jrafferty@tamu.edu
+author: jrafferty@tamu.edu, andrewjdean64@tamu.edu
 
 inputs:
   debug:
@@ -116,7 +116,7 @@ runs:
 
         {
           echo "body<<EOF"
-          cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after'
+          cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after\|::debug::\|[command]/home/runner/work/'
           echo EOF
         } >> "$GITHUB_OUTPUT"
 
