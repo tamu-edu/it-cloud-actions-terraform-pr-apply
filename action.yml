@@ -116,7 +116,7 @@ runs:
 
         {
           echo "body<<EOF"
-          cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after\|::debug::\|[command]/home/runner/work/'
+          cat apply.log | grep -v 'Refreshing state...\|Reading...\|Read complete after\|::debug::\|\[command\]/home/runner/work/'
           echo EOF
         } >> "$GITHUB_OUTPUT"
 
